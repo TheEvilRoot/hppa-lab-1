@@ -25,6 +25,7 @@
 /* Begin PBXFileReference section */
 		69159C4C2612FB5C005F0265 /* mmul */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = mmul; sourceTree = BUILT_PRODUCTS_DIR; };
 		69159C4F2612FB5C005F0265 /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
+		69159C7426150E74005F0265 /* util.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = util.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -58,6 +59,7 @@
 			isa = PBXGroup;
 			children = (
 				69159C4F2612FB5C005F0265 /* main.cpp */,
+				69159C7426150E74005F0265 /* util.h */,
 			);
 			path = mmul;
 			sourceTree = "<group>";
@@ -248,6 +250,7 @@
 					"$(OTHER_CFLAGS)",
 					"-mavx",
 					"-fno-vectorize",
+					"-O3",
 				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
@@ -264,6 +267,7 @@
 					"$(OTHER_CFLAGS)",
 					"-mavx",
 					"-fno-vectorize",
+					"-O3",
 				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};

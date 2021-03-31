@@ -2,97 +2,41 @@
 #include <cstdlib>
 #include <immintrin.h>
 #include <iostream>
+#include <iomanip>
 
-#define N 30
-#define M 40
-#define L 35
+#define eps 0.01
+#define N 380
+#define M 300
+#define L 420
 #define l 8
 #define m 4
 #define n 8
 
-void equalMatrix(float **** matrixC1, float **** matrixC2, float **** matrixC3) {
-    bool b1 = true, b2 = true, b3 = true;
-    for (int X = 0; X < L; X++) {
-        for (int Z = 0; Z < N; Z++) {
-            for (int Y = 0; Y < M; Y++) {
-                for (int x = 0; x < l; x++) {
-                    for (int z = 0; z < n; z++) {
-                        if (abs(matrixC1[X][Z][x][z] - matrixC2[X][Z][x][z]) > matrixC1[X][Z][x][z]*0.01) b1 = false;
-                        if (abs(matrixC2[X][Z][x][z] - matrixC3[X][Z][x][z]) > matrixC2[X][Z][x][z]*0.01) b2 = false;
-                        if (abs(matrixC1[X][Z][x][z] - matrixC3[X][Z][x][z]) > matrixC1[X][Z][x][z]*0.01) b3 = false;
-                    }
-                }
-            }
-        }
-    }
-    std::cout << std::boolalpha;
-    std::cout << "1 and 2 - " << b1 << std::endl;
-    std::cout << "2 and 3 - " << b2 << std::endl;
-    std::cout << "1 and 3 - " << b3 << std::endl;
+#include "util.h"
 
-}
-//   A=L*M*l*m
-//   B=M*N*m*n
-//   C=L*N*l*n
-void multiplyIntrinsics(float **** matrixA, float **** matrixB, float **** matrixC3) {
+void mulAvx(float **** a, float **** b, float **** result) {
     for (int X = 0; X < L; X++) {
         for (int Z = 0; Z < N; Z++) {
             for (int Y = 0; Y < M; Y++) {
                 __m256 cols[m];
                 for (int i = 0; i < m; i++) {
-                    cols[i] = _mm256_load_ps(matrixB[Y][Z][i]);
+                    cols[i] = _mm256_load_ps(b[Y][Z][i]);
                 }
-//                __m256 clm0 = _mm256_load_ps(matrixB[Y][Z][0]);
-//                __m256 clm1 = _mm256_load_ps(matrixB[Y][Z][1]);
-//                __m256 clm2 = _mm256_load_ps(matrixB[Y][Z][2]);
-//                __m256 clm3 = _mm256_load_ps(matrixB[Y][Z][3]);
-                //__m256 clm4 = _mm256_load_ps(matrixB[Y][Z][4]);
-                //__m256 clm5 = _mm256_load_ps(matrixB[Y][Z][5]);
-                //__m256 clm6 = _mm256_load_ps(matrixB[Y][Z][6]);
-                //__m256 clm7 = _mm256_load_ps(matrixB[Y][Z][7]);
-
                 for (int x = 0; x < l; x++) {
                     __m256 rows[m];
                     for (int j = 0; j < m; j++) {
-                        rows[j] = _mm256_broadcast_ss(&matrixA[X][Y][x][j]);
+                        rows[j] = _mm256_broadcast_ss(&a[X][Y][x][j]);
                     }
-//                    __m256 rw0 = _mm256_broadcast_ss(&matrixA[X][Y][x][0]);
-//                    __m256 rw1 = _mm256_broadcast_ss(&matrixA[X][Y][x][1]);
-//                    __m256 rw2 = _mm256_broadcast_ss(&matrixA[X][Y][x][2]);
-//                    __m256 rw3 = _mm256_broadcast_ss(&matrixA[X][Y][x][3]);
-                    //__m256 rw4 = _mm256_broadcast_ss(&matrixA[X][Y][x][4]);
-                    //__m256 rw5 = _mm256_broadcast_ss(&matrixA[X][Y][x][5]);
-                    //__m256 rw6 = _mm256_broadcast_ss(&matrixA[X][Y][x][6]);
-                    //__m256 rw7 = _mm256_broadcast_ss(&matrixA[X][Y][x][7]);
 
                     for (int j = 0; j < m; j++) {
                         rows[j] = _mm256_mul_ps(cols[j], rows[j]);
                     }
-//                    rw0 = _mm256_mul_ps(clm0, rw0);
-//                    rw1 = _mm256_mul_ps(clm1, rw1);
-//                    rw2 = _mm256_mul_ps(clm2, rw2);
-//                    rw3 = _mm256_mul_ps(clm3, rw3);
-                    //rw4 = _mm256_mul_ps(clm4, rw4);
-                    //rw5 = _mm256_mul_ps(clm5, rw5);
-                    //rw6 = _mm256_mul_ps(clm6, rw6);
-                    //rw7 = _mm256_mul_ps(clm7, rw7);
                     
                     for (int j = 1; j < m; j++) {
                         rows[0] = _mm256_add_ps(rows[0], rows[j]);
                     }
-                    
-//                    rw0 = _mm256_add_ps(rw0, rw1);
-//                    rw2 = _mm256_add_ps(rw2, rw3);
-                    //rw4 = _mm256_add_ps(rw4, rw5);
-                    //rw6 = _mm256_add_ps(rw6, rw7);
-
-//                    rw0 = _mm256_add_ps(rw0, rw2);
-                    //rw4 = _mm256_add_ps(rw4, rw6);
-
-                    //rw0 = _mm256_add_ps(rw0, rw4);
-
-                    __m256 res = _mm256_load_ps(matrixC3[X][Z][x]);
-                    _mm256_store_ps(matrixC3[X][Z][x], _mm256_add_ps(rows[0], res));
+                    __m256 res = _mm256_load_ps(result[X][Z][x]);
+                    _mm256_store_ps(result[X][Z][x], _mm256_add_ps(rows[0], res));
                 }
             }
         }
@@ -100,26 +44,15 @@ void multiplyIntrinsics(float **** matrixA, float **** matrixB, float **** matri
 
 }
 
-void multiplyVectorized(float **** matrixA, float **** matrixB, float **** matrixC1) {
+void mul(float **** a, float **** b, float **** result) {
     for (int X = 0; X < L; X++) {
         for (int Z = 0; Z < N; Z++) {
             for (int Y = 0; Y < M; Y++) {
                 for (int x = 0; x < l; x++) {
                     for (int z = 0; z < n; z++) {
                         for (int i = 0; i < m; i++) {
-                            matrixC1[X][Z][x][z] += matrixA[X][Y][x][i] * matrixB[Y][Z][i][z];
+                            result[X][Z][x][z] += a[X][Y][x][i] * b[Y][Z][i][z];
                         }
-                        
-//                        matrixC1[X][Z][x][z] +=
-//                            matrixA[X][Y][x][0] * matrixB[Y][Z][0][z] +
-//                            matrixA[X][Y][x][1] * matrixB[Y][Z][1][z] +
-//                            matrixA[X][Y][x][2] * matrixB[Y][Z][2][z] +
-//                            matrixA[X][Y][x][3] * matrixB[Y][Z][3][z];// +
-                            //matrixA[X][Y][x][4] * matrixB[Y][Z][4][z] +
-                            //matrixA[X][Y][x][5] * matrixB[Y][Z][5][z] +
-                            //matrixA[X][Y][x][6] * matrixB[Y][Z][6][z] +
-                            //matrixA[X][Y][x][7] * matrixB[Y][Z][7][z];
-
                     }
                 }
             }
@@ -127,8 +60,7 @@ void multiplyVectorized(float **** matrixA, float **** matrixB, float **** matri
     }
 }
 
-void multiplyNotVectorized(float **** matrixA, float **** matrixB, float **** matrixC2) {
-    
+void mulNoVectorize(float **** a, float **** b, float **** resuly) {
 #pragma clang loop vectorize(disable)
     for (int X = 0; X < L; X++) {
 #pragma clang loop vectorize(disable)
@@ -137,88 +69,61 @@ void multiplyNotVectorized(float **** matrixA, float **** matrixB, float **** ma
             for (int Y = 0; Y < M; Y++) {
 #pragma clang loop vectorize(disable)
                 for (int x = 0; x < l; x++) {
-
 #pragma clang loop vectorize(disable)
                     for (int z = 0; z < n; z++) {
+#pragma clang loop vectorize(disable)
                         for (int i = 0; i < m; i++) {
-                            matrixC2[X][Z][x][z] += matrixA[X][Y][x][i] * matrixB[Y][Z][i][z];
+                            resuly[X][Z][x][z] += a[X][Y][x][i] * b[Y][Z][i][z];
                         }
-//                        matrixC2[X][Z][x][z] +=
-//                            matrixA[X][Y][x][0] * matrixB[Y][Z][0][z] +
-//                            matrixA[X][Y][x][1] * matrixB[Y][Z][1][z] +
-//                            matrixA[X][Y][x][2] * matrixB[Y][Z][2][z] +
-//                            matrixA[X][Y][x][3] * matrixB[Y][Z][3][z];// +
-                            //matrixA[X][Y][x][4] * matrixB[Y][Z][4][z] +
-                            //matrixA[X][Y][x][5] * matrixB[Y][Z][5][z] +
-                            //matrixA[X][Y][x][6] * matrixB[Y][Z][6][z] +
-                            //matrixA[X][Y][x][7] * matrixB[Y][Z][7][z];
-
                     }
                 }
             }
         }
     }
 }
-float **** newMatrix(int R, int C, int r, int c) {
-    float **** matrix = new (std::align_val_t(32)) float***[R];
-    for (int i = 0; i < R; i++) {
-        matrix[i] = new (std::align_val_t(32)) float **[C];
-        for (int j = 0; j < C; j++) {
-            matrix[i][j] = new (std::align_val_t(32)) float *[r];
-            for (int k = 0; k < r; k++) {
-                matrix[i][j][k] = new (std::align_val_t(32)) float[c];
-            }
-        }
-    }
-    return matrix;
-}
+
 
 int main() {
-    float **** matrixA = newMatrix(L, M, l, m);// [L][M][l][m];
-    float **** matrixB = newMatrix(M, N, m, n); // [M][N][m][n];
-    float ****matrixC1 = newMatrix(L, N, l, n); // [L][N][l][n];
-    float ****matrixC2 = newMatrix(L, N, l, n); // [L][N][l][n];
-    float ****matrixC3 = newMatrix(L, N, l, n); //[L][N][l][n];
-    srand(time(NULL));
-
-
-    // A filling
-    for (int i = 0; i < L; i++) {
-        for (int j = 0; j < M; j++) {
-            for (int k = 0; k < l; k++) {
-                for (int p = 0; p < m; p++) {
-                    matrixA[i][j][k][p] = (rand() % 10)/1.1;
-                }
-            }
-        }
-    }
-    for (int i = 0; i < M; i++) {
-        for (int j = 0; j < N; j++) {
-            for (int k = 0; k < m; k++) {
-                for (int p = 0; p < n; p++) {
-                    matrixB[i][j][k][p] = (rand() % 10)/1.1;
-                }
-            }
-        }
-    }
-
-    for (int i = 0; i < L; i++) {
-        for (int j = 0; j < N; j++) {
-            for (int k = 0; k < l; k++) {
-                for (int p = 0; p < n; p++) {
-                    matrixC1[i][j][k][p] = 0;
-                    matrixC2[i][j][k][p] = 0;
-                    matrixC3[i][j][k][p] = 0;
-                }
-            }
-        }
-    }
-
-    multiplyVectorized(matrixA, matrixB, matrixC1);
-    multiplyNotVectorized(matrixA, matrixB, matrixC2);
-    multiplyIntrinsics(matrixA, matrixB, matrixC3);
-    equalMatrix(matrixC1, matrixC2, matrixC3);
-
-    std::cout << std::endl;
+    srand(time(nullptr) & 0xFFFFFFFF);
+    
+    fprintf(stderr, "allocating...\n");
+    fprintf(stderr, "0 / 5");
+    auto matrixA = newMatrix(L, M, l, m, true, true);
+    fprintf(stderr, "\r1 / 5");
+    auto matrixB = newMatrix(M, N, m, n, true, true);
+    fprintf(stderr, "\r2 / 5");
+    
+    auto resultVectorized = newMatrix(L, N, l, n, false, false);
+    fprintf(stderr, "\r3 / 5");
+    
+    auto resultNotVectorized = newMatrix(L, N, l, n, false, false);
+    fprintf(stderr, "\r4 / 5");
+    
+    auto resultAvx = newMatrix(L, N, l, n, false, true);
+    fprintf(stderr, "\r5 / 5\n");
+    fprintf(stderr, "running 0 / 3");
+    
+    auto timeVec = measure<std::chrono::microseconds>(mul, matrixA, matrixB, resultVectorized);
+    fprintf(stderr, "\rrunning 1 / 3");
+    
+    auto timeNoVec = measure<std::chrono::microseconds>(mulNoVectorize, matrixA, matrixB, resultNotVectorized);
+    fprintf(stderr, "\rrunning 2 / 3");
+    
+    auto timeAvx = measure<std::chrono::microseconds>(mulAvx, matrixA, matrixB, resultAvx);
+    fprintf(stderr, "\rrunning 3 / 3\n");
+    
+    std::cout << std::setw(20) << std::setfill(' ') << std::right << "Vectorized: ";
+    std::cout << std::setw(6) << std::setfill(' ') << std::left << timeVec << "mcs\n";
+    std::cout << std::setw(20) << std::setfill(' ') << std::right << "Not Vectorized: ";
+    std::cout << std::setw(6) << std::setfill(' ') << std::left << timeNoVec << "mcs\n";
+    std::cout << std::setw(20) << std::setfill(' ') << std::right << "AVX: ";
+    std::cout << std::setw(6) << std::setfill(' ') << std::left << timeAvx << "mcs\n";
+    
+    bool check = matrixCompare(resultVectorized, resultNotVectorized);
+    check = check && matrixCompare(resultNotVectorized, resultAvx);
+    check = check && matrixCompare(resultVectorized, resultAvx);
+    
+    std::cout << std::setw(20) << std::setfill(' ') << std::right << "Check: ";
+    std::cout << std::setw(6) << std::setfill(' ') << std::left << std::boolalpha << check << "\n";
     return 0;
 }
