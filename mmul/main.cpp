@@ -38,49 +38,61 @@ void multiplyIntrinsics(float **** matrixA, float **** matrixB, float **** matri
     for (int X = 0; X < L; X++) {
         for (int Z = 0; Z < N; Z++) {
             for (int Y = 0; Y < M; Y++) {
-
-                __m256 clm0 = _mm256_load_ps(matrixB[Y][Z][0]);
-                __m256 clm1 = _mm256_load_ps(matrixB[Y][Z][1]);
-                __m256 clm2 = _mm256_load_ps(matrixB[Y][Z][2]);
-                __m256 clm3 = _mm256_load_ps(matrixB[Y][Z][3]);
+                __m256 cols[m];
+                for (int i = 0; i < m; i++) {
+                    cols[i] = _mm256_load_ps(matrixB[Y][Z][i]);
+                }
+//                __m256 clm0 = _mm256_load_ps(matrixB[Y][Z][0]);
+//                __m256 clm1 = _mm256_load_ps(matrixB[Y][Z][1]);
+//                __m256 clm2 = _mm256_load_ps(matrixB[Y][Z][2]);
+//                __m256 clm3 = _mm256_load_ps(matrixB[Y][Z][3]);
                 //__m256 clm4 = _mm256_load_ps(matrixB[Y][Z][4]);
                 //__m256 clm5 = _mm256_load_ps(matrixB[Y][Z][5]);
                 //__m256 clm6 = _mm256_load_ps(matrixB[Y][Z][6]);
                 //__m256 clm7 = _mm256_load_ps(matrixB[Y][Z][7]);
 
                 for (int x = 0; x < l; x++) {
-
-                    __m256 rw0 = _mm256_broadcast_ss(&matrixA[X][Y][x][0]);
-                    __m256 rw1 = _mm256_broadcast_ss(&matrixA[X][Y][x][1]);
-                    __m256 rw2 = _mm256_broadcast_ss(&matrixA[X][Y][x][2]);
-                    __m256 rw3 = _mm256_broadcast_ss(&matrixA[X][Y][x][3]);
+                    __m256 rows[m];
+                    for (int j = 0; j < m; j++) {
+                        rows[j] = _mm256_broadcast_ss(&matrixA[X][Y][x][j]);
+                    }
+//                    __m256 rw0 = _mm256_broadcast_ss(&matrixA[X][Y][x][0]);
+//                    __m256 rw1 = _mm256_broadcast_ss(&matrixA[X][Y][x][1]);
+//                    __m256 rw2 = _mm256_broadcast_ss(&matrixA[X][Y][x][2]);
+//                    __m256 rw3 = _mm256_broadcast_ss(&matrixA[X][Y][x][3]);
                     //__m256 rw4 = _mm256_broadcast_ss(&matrixA[X][Y][x][4]);
                     //__m256 rw5 = _mm256_broadcast_ss(&matrixA[X][Y][x][5]);
                     //__m256 rw6 = _mm256_broadcast_ss(&matrixA[X][Y][x][6]);
                     //__m256 rw7 = _mm256_broadcast_ss(&matrixA[X][Y][x][7]);
 
-                    rw0 = _mm256_mul_ps(clm0, rw0);
-                    rw1 = _mm256_mul_ps(clm1, rw1);
-                    rw2 = _mm256_mul_ps(clm2, rw2);
-                    rw3 = _mm256_mul_ps(clm3, rw3);
+                    for (int j = 0; j < m; j++) {
+                        rows[j] = _mm256_mul_ps(cols[j], rows[j]);
+                    }
+//                    rw0 = _mm256_mul_ps(clm0, rw0);
+//                    rw1 = _mm256_mul_ps(clm1, rw1);
+//                    rw2 = _mm256_mul_ps(clm2, rw2);
+//                    rw3 = _mm256_mul_ps(clm3, rw3);
                     //rw4 = _mm256_mul_ps(clm4, rw4);
                     //rw5 = _mm256_mul_ps(clm5, rw5);
                     //rw6 = _mm256_mul_ps(clm6, rw6);
                     //rw7 = _mm256_mul_ps(clm7, rw7);
-
-                    rw0 = _mm256_add_ps(rw0, rw1);
-                    rw2 = _mm256_add_ps(rw2, rw3);
+                    
+                    for (int j = 1; j < m; j++) {
+                        rows[0] = _mm256_add_ps(rows[0], rows[j]);
+                    }
+                    
+//                    rw0 = _mm256_add_ps(rw0, rw1);
+//                    rw2 = _mm256_add_ps(rw2, rw3);
                     //rw4 = _mm256_add_ps(rw4, rw5);
                     //rw6 = _mm256_add_ps(rw6, rw7);
 
-                    rw0 = _mm256_add_ps(rw0, rw2);
+//                    rw0 = _mm256_add_ps(rw0, rw2);
                     //rw4 = _mm256_add_ps(rw4, rw6);
 
                     //rw0 = _mm256_add_ps(rw0, rw4);
 
                     __m256 res = _mm256_load_ps(matrixC3[X][Z][x]);
-                    res = _mm256_add_ps(rw0, res);
-                    _mm256_store_ps(matrixC3[X][Z][x], res);
+                    _mm256_store_ps(matrixC3[X][Z][x], _mm256_add_ps(rows[0], res));
                 }
             }
         }
@@ -94,11 +106,15 @@ void multiplyVectorized(float **** matrixA, float **** matrixB, float **** matri
             for (int Y = 0; Y < M; Y++) {
                 for (int x = 0; x < l; x++) {
                     for (int z = 0; z < n; z++) {
-                        matrixC1[X][Z][x][z] +=
-                            matrixA[X][Y][x][0] * matrixB[Y][Z][0][z] +
-                            matrixA[X][Y][x][1] * matrixB[Y][Z][1][z] +
-                            matrixA[X][Y][x][2] * matrixB[Y][Z][2][z] +
-                            matrixA[X][Y][x][3] * matrixB[Y][Z][3][z];// +
+                        for (int i = 0; i < m; i++) {
+                            matrixC1[X][Z][x][z] += matrixA[X][Y][x][i] * matrixB[Y][Z][i][z];
+                        }
+                        
+//                        matrixC1[X][Z][x][z] +=
+//                            matrixA[X][Y][x][0] * matrixB[Y][Z][0][z] +
+//                            matrixA[X][Y][x][1] * matrixB[Y][Z][1][z] +
+//                            matrixA[X][Y][x][2] * matrixB[Y][Z][2][z] +
+//                            matrixA[X][Y][x][3] * matrixB[Y][Z][3][z];// +
                             //matrixA[X][Y][x][4] * matrixB[Y][Z][4][z] +
                             //matrixA[X][Y][x][5] * matrixB[Y][Z][5][z] +
                             //matrixA[X][Y][x][6] * matrixB[Y][Z][6][z] +
@@ -112,20 +128,26 @@ void multiplyVectorized(float **** matrixA, float **** matrixB, float **** matri
 }
 
 void multiplyNotVectorized(float **** matrixA, float **** matrixB, float **** matrixC2) {
-
+    
+#pragma clang loop vectorize(disable)
     for (int X = 0; X < L; X++) {
+#pragma clang loop vectorize(disable)
         for (int Z = 0; Z < N; Z++) {
+#pragma clang loop vectorize(disable)
             for (int Y = 0; Y < M; Y++) {
+#pragma clang loop vectorize(disable)
                 for (int x = 0; x < l; x++) {
 
-#pragma loop(no_vector)
-
+#pragma clang loop vectorize(disable)
                     for (int z = 0; z < n; z++) {
-                        matrixC2[X][Z][x][z] +=
-                            matrixA[X][Y][x][0] * matrixB[Y][Z][0][z] +
-                            matrixA[X][Y][x][1] * matrixB[Y][Z][1][z] +
-                            matrixA[X][Y][x][2] * matrixB[Y][Z][2][z] +
-                            matrixA[X][Y][x][3] * matrixB[Y][Z][3][z];// +
+                        for (int i = 0; i < m; i++) {
+                            matrixC2[X][Z][x][z] += matrixA[X][Y][x][i] * matrixB[Y][Z][i][z];
+                        }
+//                        matrixC2[X][Z][x][z] +=
+//                            matrixA[X][Y][x][0] * matrixB[Y][Z][0][z] +
+//                            matrixA[X][Y][x][1] * matrixB[Y][Z][1][z] +
+//                            matrixA[X][Y][x][2] * matrixB[Y][Z][2][z] +
+//                            matrixA[X][Y][x][3] * matrixB[Y][Z][3][z];// +
                             //matrixA[X][Y][x][4] * matrixB[Y][Z][4][z] +
                             //matrixA[X][Y][x][5] * matrixB[Y][Z][5][z] +
                             //matrixA[X][Y][x][6] * matrixB[Y][Z][6][z] +
@@ -152,8 +174,8 @@ float **** newMatrix(int R, int C, int r, int c) {
 }
 
 int main() {
-    float ****matrixA = newMatrix(L, M, l, m);// [L][M][l][m];
-    float ****matrixB = newMatrix(M, N, m, n); // [M][N][m][n];
+    float **** matrixA = newMatrix(L, M, l, m);// [L][M][l][m];
+    float **** matrixB = newMatrix(M, N, m, n); // [M][N][m][n];
     float ****matrixC1 = newMatrix(L, N, l, n); // [L][N][l][n];
     float ****matrixC2 = newMatrix(L, N, l, n); // [L][N][l][n];
     float ****matrixC3 = newMatrix(L, N, l, n); //[L][N][l][n];
@@ -198,79 +220,5 @@ int main() {
     equalMatrix(matrixC1, matrixC2, matrixC3);
 
     std::cout << std::endl;
-
-    //for (int i = 0; i < L; i++) {
-    //    for (int j = 0; j < M; j++) {
-    //        for (int k = 0; k < l; k++) {
-    //            for (int p = 0; p < m; p++) {
-    //                std::cout << matrixA[i][j][k][p] << "  ";
-    //            }
-    //        }
-    //    }
-    //    std::cout << std::endl;
-    //}
-    //std::cout << std::endl;
-    //for (int i = 0; i < M; i++) {
-    //    for (int j = 0; j < N; j++) {
-    //        for (int k = 0; k < m; k++) {
-    //            for (int p = 0; p < n; p++) {
-    //                std::cout << matrixB[i][j][k][p] << "  ";
-    //            }
-    //        }
-    //    }
-    //    std::cout << std::endl;
-    //}
-    //std::cout << std::endl;
-/*
-    for (int i = 0; i < L; i++) {
-        for (int j = 0; j < N; j++) {
-            for (int k = 0; k < l; k++) {
-                for (int p = 0; p < n; p++) {
-                    std::cout << matrixC1[i][j][k][p] << "  ";
-                }
-                std::cout << std::endl;
-            }
-            std::cout << std::endl;
-        }
-        std::cout << std::endl;
-    }
-
-    std::cout << std::endl;
-    std::cout << "------------------------------------------------------------------------------" << std::endl;
-    std::cout << std::endl;
-
-    for (int i = 0; i < L; i++) {
-        for (int j = 0; j < N; j++) {
-            for (int k = 0; k < l; k++) {
-                for (int p = 0; p < n; p++) {
-                    std::cout << matrixC2[i][j][k][p] << "  ";
-                }
-                std::cout << std::endl;
-            }
-            std::cout << std::endl;
-        }
-        std::cout << std::endl;
-    }
-
-    std::cout << std::endl;
-    std::cout << "------------------------------------------------------------------------------"<< std::endl;
-    std::cout << std::endl;
-
-    for (int i = 0; i < L; i++) {
-        for (int j = 0; j < N; j++) {
-            for (int k = 0; k < l; k++) {
-                for (int p = 0; p < n; p++) {
-                    std::cout << matrixC3[i][j][k][p] << "  ";
-                }
-                std::cout << std::endl;
-            }
-            std::cout << std::endl;
-        }
-        std::cout << std::endl;
-    }
-
-    std::cout << std::endl;
-*/
-
     return 0;
 }

@@ -239,6 +239,7 @@
 		69159C542612FB5C005F0265 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CLANG_CXX_LANGUAGE_STANDARD = "c++17";
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 959U4P4SU9;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -246,6 +247,7 @@
 				OTHER_CPLUSPLUSFLAGS = (
 					"$(OTHER_CFLAGS)",
 					"-mavx",
+					"-fno-vectorize",
 				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
@@ -254,12 +256,14 @@
 		69159C552612FB5C005F0265 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CLANG_CXX_LANGUAGE_STANDARD = "c++17";
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 959U4P4SU9;
 				ENABLE_HARDENED_RUNTIME = YES;
 				OTHER_CPLUSPLUSFLAGS = (
 					"$(OTHER_CFLAGS)",
 					"-mavx",
+					"-fno-vectorize",
 				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
