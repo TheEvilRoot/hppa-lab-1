@@ -1,0 +1,8 @@
+.DS_Store
+.vs/
+VTune*/
+x64/
+x86/
+*.swp
+*.user
+*.filters
